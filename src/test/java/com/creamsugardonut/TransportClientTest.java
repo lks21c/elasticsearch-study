@@ -15,6 +15,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class TransportClientTest {
 
 	private TransportClient client;
@@ -34,43 +37,46 @@ public class TransportClientTest {
 
 	@Test
 	public void testPut() throws Exception {
-		client.prepareIndex("megacorp", "employee", "1") //
-				.setSource("first_name", "John") //
-				.setSource("last_name", "Smith") //
-				.setSource("age", 25) //
-				.setSource("about", "I love to go rock climbing") //
-				.setSource("interests", new String[]{"sports", "music"}).execute();
+        Map<String, Object> map = new HashMap<>();
+        map.put("first_name", "John");
+        map.put("last_name", "Smith");
+        map.put("age", 25);
+        map.put("about", "I love to go rock climbing");
+        map.put("interests", new String[]{"sports", "music"});
+        client.prepareIndex("megacorp", "employee", "1") //
+				.setSource(map) //
+				.execute();
 	}
 
 	@Test
 	public void testBulk() throws Exception {
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("first_name", "Jane");
+        map1.put("last_name", "Smith");
+        map1.put("age", 32);
+        map1.put("about", "I like to collect rock albums");
+        map1.put("interests", new String[]{"music"});
+		IndexRequest indexRequest1 = new IndexRequest("megacorp", "employee", "2");
+		indexRequest1.source(map1);
 
-		IndexRequest indexRequest = new IndexRequest("megacorp", "employee", "2");
-		indexRequest.source("first_name", "Jane") //
-				.source("last_name", "Smith") //
-				.source("age", 32) //
-				.source("about", "I like to collect rock albums") //
-				.source("interests", new String[]{"music"});
-		client.prepareBulk().add(indexRequest).execute();
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put("first_name", "Douglas");
+        map2.put("last_name", "Fir");
+        map2.put("age", 35);
+        map2.put("about", "I like to build cabinets");
+        map2.put("interests", new String[]{"forestry"});
+        IndexRequest indexRequest2 = new IndexRequest("megacorp", "employee", "3");
+        indexRequest2.source(map2);
 
-		client.prepareIndex("megacorp", "employee", "2") //
-				.setSource("first_name", "Jane") //
-				.setSource("last_name", "Smith") //
-				.setSource("age", 32) //
-				.setSource("about", "I like to collect rock albums") //
-				.setSource("interests", new String[]{"music"});
-
-		client.prepareIndex("megacorp", "employee", "3") //
-				.setSource("first_name", "Douglas") //
-				.setSource("last_name", "Fir") //
-				.setSource("age", 35) //
-				.setSource("about", "I like to build cabinets") //
-				.setSource("interests", new String[]{"forestry"});
+		client.prepareBulk().add(indexRequest1).add(indexRequest2).execute();
 	}
 
 	@Test
 	public void testDelete() throws Exception {
-		DeleteRequest deleteRequest = new DeleteRequest("megacorp", "employee", "2");
+        DeleteRequest deleteRequest = new DeleteRequest("megacorp", "employee", "1");
+        client.delete(deleteRequest);
+
+		deleteRequest = new DeleteRequest("megacorp", "employee", "2");
 		client.delete(deleteRequest);
 
 		deleteRequest = new DeleteRequest("megacorp", "employee", "3");
@@ -79,20 +85,9 @@ public class TransportClientTest {
 
 	@Test
 	public void testGet() throws Exception {
-
-		Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", "creamsugardonut").build();
-
-		// on startup
-		Client client = new TransportClient(settings)
-				.addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
-
-		String indexName = "cars";
-		GetRequest request = new GetRequest(indexName);
+		GetRequest request = new GetRequest("megacorp", "employee", "1");
 		ActionFuture<GetResponse> response = client.get(request);
 
-		System.out.println("fields = " + response.get().getId());
-
-		// on shutdown
-		client.close();
+		System.out.println("fields = " + response.get().getSourceAsString());
 	}
 }
