@@ -13,8 +13,7 @@ import org.elasticsearch.common.lang3.builder.ToStringBuilder;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.index.query.MatchQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.index.search.MultiMatchQuery;
 import org.junit.After;
@@ -43,7 +42,7 @@ public class TransportClientTest {
 
 	@Test
 	public void testPut() throws Exception {
-        testDelete();
+		testDelete();
 
 		Map<String, Object> map = new HashMap<>();
 		map.put("first_name", "John");
@@ -106,14 +105,25 @@ public class TransportClientTest {
 		System.out.println("fields = " + response.get());
 	}
 
-    @Test
-    public void testSearch2() throws Exception {
-        MatchQueryBuilder matchQuery = QueryBuilders.matchQuery("last_name", "Smith");
-        ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
-                .setTypes("employee") //
-                .setQuery(matchQuery)
-                .execute();
+	@Test
+	public void testSearchWithQueryDsl() throws Exception {
+		MatchQueryBuilder matchQuery = QueryBuilders.matchQuery("last_name", "Smith");
+		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
+				.setTypes("employee") //
+				.setQuery(matchQuery).execute();
 
-        System.out.println("fields = " + response.get());
-    }
+		System.out.println("fields = " + response.get());
+	}
+
+	@Test
+	public void testSearchWithQueryDsl2() throws Exception {
+		FilteredQueryBuilder filteredQuery = QueryBuilders.filteredQuery( //
+				QueryBuilders.matchQuery("last_name", "Smith"), //
+				FilterBuilders.rangeFilter("age").gt(30));
+		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
+				.setTypes("employee") //
+				.setQuery(filteredQuery).execute();
+
+		System.out.println("fields = " + response.get());
+	}
 }
