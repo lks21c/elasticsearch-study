@@ -16,6 +16,8 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.search.MatchQuery;
 import org.elasticsearch.index.search.MultiMatchQuery;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,6 +125,40 @@ public class TransportClientTest {
 		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
 				.setTypes("employee") //
 				.setQuery(filteredQuery).execute();
+
+		System.out.println("fields = " + response.get());
+	}
+
+	@Test
+	public void testAggregation() throws Exception {
+		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
+				.setTypes("employee") //
+				.addAggregation(AggregationBuilders.terms("all_interests").field("interests")) //
+				.execute();
+
+		System.out.println("fields = " + response.get());
+	}
+
+	@Test
+	public void testAggregation2() throws Exception {
+		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
+				.setTypes("employee") //
+				.setQuery(QueryBuilders.matchQuery("last_name", "Smith")) //
+				.addAggregation(AggregationBuilders.terms("all_interests").field("interests")) //
+				.execute();
+
+		System.out.println("fields = " + response.get());
+	}
+
+	@Test
+	public void testAggregation3() throws Exception {
+		AggregationBuilder aggregation = AggregationBuilders.terms("all_interests").field("interests") //
+				.subAggregation(AggregationBuilders.avg("avg_age").field("age"));
+
+		ActionFuture<SearchResponse> response = client.prepareSearch("megacorp") //
+				.setTypes("employee") //
+				.addAggregation(aggregation) //
+				.execute();
 
 		System.out.println("fields = " + response.get());
 	}
